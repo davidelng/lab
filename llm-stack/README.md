@@ -82,6 +82,20 @@ Add to your `/etc/hosts` file:
 ```
 Then access via http://llm.local/chat
 
+### Environment Variables
+
+The stack uses environment variables for all sensitive configuration. See `.env` file for:
+- Database credentials
+- Service ports
+- Admin passwords
+- Secret keys
+
+**Security best practices:**
+- Never commit `.env` to version control
+- Use strong, unique passwords
+- Generate secret keys using `openssl rand -hex 32`
+- Change all default values before running in production
+
 ## Service Details
 
 ### Nginx Reverse Proxy
@@ -111,6 +125,7 @@ Then access via http://llm.local/chat
 - **Node Exporter**: System metrics (CPU, RAM, disk, network)
 - **cAdvisor**: Docker container metrics
 - Pre-configured to monitor your entire LLM stack
+- Dashboards to import: 1860, 193, 3662
 
 **What you can monitor:**
 - Container resource usage (CPU, memory per container)
@@ -147,6 +162,26 @@ Conversation history tracking
 Your personal knowledge repository
 - Full-text and vector searchable
 - Supports tagging and categorization
+
+## Testing Vector Search
+
+Connect to PostgreSQL and try:
+
+```sql
+-- Insert a test embedding
+INSERT INTO embeddings (content, embedding, metadata) 
+VALUES (
+    'Hello world',
+    '[0.1, 0.2, 0.3, ...]'::vector,  -- Replace with actual embedding
+    '{"source": "test"}'::jsonb
+);
+
+-- Find similar vectors (cosine similarity)
+SELECT content, 1 - (embedding <=> '[0.1, 0.2, ...]'::vector) as similarity
+FROM embeddings
+ORDER BY embedding <=> '[0.1, 0.2, ...]'::vector
+LIMIT 5;
+```
 
 ## Future Expansions
 
@@ -193,6 +228,11 @@ Add to docker-compose.yml:
 ## Useful Commands
 
 ```bash
+# Install loki plugin
+docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+```
+
+```bash
 # Stop everything
 docker-compose down
 
@@ -215,6 +255,28 @@ docker exec -it llm-postgres psql -U llm_user -d llm_db
 docker stats
 ```
 
+## Troubleshooting
+
+### Ollama won't start
+- Check if port 11434 is already in use
+- Look at logs: `docker-compose logs ollama`
+- Ensure enough disk space for models
+
+### PostgreSQL connection failed
+- Wait for healthcheck to pass (can take 30-60 seconds)
+- Verify credentials in docker-compose.yml
+- Check logs: `docker-compose logs postgres`
+
+### Out of memory
+- Use smaller models (phi3:mini, llama3.2:1b)
+- Reduce number of running containers
+- Add swap space to your laptop
+
+### GPU not detected
+- Uncomment GPU section in docker-compose.yml
+- Install nvidia-docker2
+- Verify: `docker run --rm --gpus all nvidia/cuda:12.0-base nvidia-smi`
+
 ## Next Steps
 
 1. Start with the basic chat in Open WebUI
@@ -226,7 +288,42 @@ docker stats
 
 ## Security Notes
 
-This setup is for local network only
+⚠️ **This setup is for LOCAL NETWORK ONLY**
+- **CRITICAL**: Copy .env template and set strong passwords before first run
+- Generate secure keys: `openssl rand -hex 32`
+- Add `.env` to `.gitignore` immediately
+- Never commit `.env` to version control
+- Change all default credentials in the .env file
+- Don't expose ports to the internet without proper security
+- Use proper secrets management for production (e.g., Docker secrets, Vault)
+- PostgreSQL is configured for local development security
+
+### File Structure
+```
+llm-stack/
+├── docker-compose.yml
+├── .env                    # Your configuration (DO NOT COMMIT)
+├── .env.example           # Template (safe to commit)
+├── .gitignore             # Include .env here
+├── init-scripts/
+│   └── 01-init.sql
+└── nginx/
+    ├── nginx.conf         # Main Nginx config
+    ├── conf.d/
+    │   └── llm-stack.conf # Service routing
+    └── ssl/               # SSL certificates (optional)
+        ├── cert.pem
+        └── key.pem
+```
+
+## Nginx Reverse Proxy Benefits
+
+✅ **Single entry point** - All services through one port
+✅ **Clean URLs** - `/chat`, `/pgadmin/`, `/api/` instead of ports
+✅ **Easy SSL** - Add HTTPS in one place for all services
+✅ **Load balancing ready** - Scale services horizontally later
+✅ **Security** - Hide internal service ports, add authentication
+✅ **Monitoring** - Centralized access logs
 
 ## SSL/HTTPS Setup (Optional)
 

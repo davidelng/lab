@@ -34,6 +34,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
     # Comment below if you don't have NVIDIA GPU
     deploy:
       resources:
@@ -52,7 +53,6 @@ services:
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
-      # Optional: Connect to PostgreSQL for WebUI data
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     volumes:
       - open_webui_data:/app/backend/data
@@ -79,6 +79,35 @@ services:
       - postgres
     restart: unless-stopped
 
+  # Loki - Log Aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: llm-loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    volumes:
+      - loki_data:/loki
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  #  Promtail - prevent Loki deadlock
+  promtail:
+    image: grafana/promtail:latest
+    container_name: llm-promtail
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail/promtail.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+
   # Nginx - Reverse Proxy
   nginx:
     image: nginx:alpine
@@ -92,9 +121,9 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - nginx_cache:/var/cache/nginx
     depends_on:
-      - ollama
       - open-webui
       - pgadmin
+      - grafana
     restart: unless-stopped
 
   # Prometheus - Metrics collection
@@ -111,6 +140,10 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.external-url=http://localhost/prometheus'
+      - '--web.route-prefix=/'
+    depends_on:
+      - loki
     restart: unless-stopped
 
   # Grafana - Visualization
@@ -130,6 +163,7 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
+      - loki
     restart: unless-stopped
 
   # Node Exporter - System metrics
@@ -174,6 +208,8 @@ volumes:
   nginx_cache:
     driver: local
   prometheus_data:
+    driver: local
+  loki_data:
     driver: local
   grafana_data:
     driver: local
