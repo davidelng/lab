@@ -1,3 +1,3 @@
 # Lab
 
-Collection of services running on my homelab
+My personal homelab that i use to experiment on various technologies like LLMs, containers, webservers and monitoring tools.
