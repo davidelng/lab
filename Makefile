@@ -4,7 +4,14 @@ COMPOSE = docker compose \
 
 SERVICE ?=
 
+.DEFAULT_GOAL = up
 .PHONY: up stop restart down logs ps shell
+
+check_service:
+	@if [ -z "$(SERVICE)" ]; then \
+		echo "SERVICE is not set. Usage make [cmd] SERVICE=foo"; \
+		exit 1; \
+	fi
 
 up:
 	$(COMPOSE) up -d
@@ -24,6 +31,6 @@ logs:
 ps:
 	$(COMPOSE) ps
 
-shell:
+shell: check_service
 	$(COMPOSE) exec $(SERVICE) sh
 
