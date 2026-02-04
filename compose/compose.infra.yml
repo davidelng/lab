@@ -1,0 +1,10 @@
+networks:
+  internal:
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  ollama_data:
+  open_webui_data:
+
+

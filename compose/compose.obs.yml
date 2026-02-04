@@ -1,0 +1,8 @@
+services:
+  # Monitoring Dashboard - Grafana
+  # Container metrics - cAdvisor
+  # System metrics - Node Exporter
+  # Metrics collection - Prometheus
+  # Log aggregation - Loki
+  # Log collection - Alloy
+

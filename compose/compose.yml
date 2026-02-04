@@ -1,0 +1,7 @@
+include:
+  - compose.infra.yml
+  - compose.proxy.yml
+  - compose.data.yml
+  - compose.ai.yml
+  - compose.apps.yml
+  - compose.obs.yml
