@@ -2,8 +2,10 @@ services:
   # LLM Runtime - Ollama
   ollama:
     image: ollama/ollama:latest
-    ports:
-      - "${OLLAMA_PORT}:11434"
+    expose:
+      - "11434"
+    # ports:
+    #  - "${OLLAMA_PORT}:11434"
     volumes:
       - ollama_data:/root/.ollama
     networks:
@@ -30,8 +32,10 @@ services:
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-    ports:
-      - "${OPEN_WEBUI_PORT}:8080"
+    expose:
+      - "8080"
+    # ports:
+    #   - "${OPEN_WEBUI_PORT}:8080"
     volumes:
       - open_webui_data:/app/backend/data
     networks:

@@ -6,8 +6,10 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    ports:
-      - "${POSTGRES_PORT}:5432"
+    expose:
+      - "5432"
+    # ports:
+    #   - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
     networks:
@@ -26,9 +28,12 @@ services:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
       - PGADMIN_CONFIG_ALLOW_SPECIAL_EMAIL_DOMAINS=["local"]
-    ports:
-      - "${PGADMIN_PORT_HTTP}:80"
-      - "${PGADMIN_PORT_HTTPS}:443"
+    expose:
+      - "80"
+      - "443"
+    # ports:
+    #   - "${PGADMIN_PORT_HTTP}:80"
+    #   - "${PGADMIN_PORT_HTTPS}:443"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:

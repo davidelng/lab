@@ -9,7 +9,7 @@ SERVICE ?=
 
 check_service:
 	@if [ -z "$(SERVICE)" ]; then \
-		echo "SERVICE is not set. Usage make [cmd] SERVICE=foo"; \
+		echo "SERVICE is not set. Usage make cmd SERVICE=service"; \
 		exit 1; \
 	fi
 
