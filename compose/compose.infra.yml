@@ -6,5 +6,7 @@ volumes:
   pgadmin_data:
   ollama_data:
   open_webui_data:
+  prometheus_data:
+  grafana_data:
 
 

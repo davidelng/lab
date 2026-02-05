@@ -3,5 +3,5 @@ include:
   - compose.proxy.yml
   - compose.data.yml
   - compose.ai.yml
+  - compose.obs.yml
   # - compose.apps.yml
-  # - compose.obs.yml
