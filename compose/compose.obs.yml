@@ -11,7 +11,14 @@ services:
       - prometheus_data:/prometheus
     networks:
       - internal
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Monitoring Dashboard - Grafana
   grafana:
@@ -34,8 +41,56 @@ services:
       - prometheus
 
   # Container metrics - cAdvisor
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    expose:
+      - "8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    privileged: true
+    networks:
+      - internal
+    restart: unless-stopped
+
   # System metrics - Node Exporter
+  # NOTE: should run on host
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    command:
+      - '--path.sysfs=/host/sys'
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)'
+      # - '--web.listen-address=127.0.0.1:9100'
+    expose:
+      - "9100"
+    volumes:
+      - /sys:/host/sys:ro
+      - /proc:/host/proc:ro
+      - /:/host:ro
+    networks:
+      - internal
+    # network_mode: host
+    # pid: host
+    restart: unless-stopped
+
   # Db Metrics - Postgres Exporter
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter
+    environment:
+      - DATA_SOURCE_URI=postgres:5432/postgres?sslmode=disable
+      - DATA_SOURCE_USER=${POSTGRES_EXPORTER_USER}
+      - DATA_SOURCE_PASS=${POSTGRES_EXPORTER_PASS}
+    expose:
+      - "9187"
+    networks:
+      - internal
+    restart: unless-stopped
+
   # Log aggregation - Loki
   # Log collection - Alloy
 
