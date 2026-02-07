@@ -20,6 +20,17 @@ services:
       timeout: 5s
       retries: 5
 
+  # Log aggregation - Loki
+  loki:
+    image: grafana/loki:latest
+    expose:
+      - "3100"
+    volumes:
+      - loki_data:/loki
+    networks:
+      - internal
+    restart: unless-stopped
+
   # Monitoring Dashboard - Grafana
   grafana:
     image: grafana/grafana:latest
@@ -90,7 +101,4 @@ services:
     networks:
       - internal
     restart: unless-stopped
-
-  # Log aggregation - Loki
-  # Log collection - Alloy
 
