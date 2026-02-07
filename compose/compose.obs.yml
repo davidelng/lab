@@ -23,13 +23,30 @@ services:
   # Log aggregation - Loki
   loki:
     image: grafana/loki:latest
+    command:
+      - '-config.file=/etc/loki/loki-config.yaml'
+      # - '-config.file=/etc/loki/local-config.yaml' # default conf
     expose:
       - "3100"
     volumes:
+      - ../loki/loki-config.yaml:/etc/loki/loki-config.yaml
       - loki_data:/loki
     networks:
       - internal
     restart: unless-stopped
+
+  # Log collection - Alloy
+  alloy:
+    image: grafana/alloy:latest
+    command: run /etc/alloy/alloy.config
+    volumes:
+      - ../alloy/alloy.config:/etc/alloy/alloy.config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - internal
+    restart: unless-stopped
+    depends_on:
+      - loki
 
   # Monitoring Dashboard - Grafana
   grafana:
@@ -92,6 +109,8 @@ services:
   # Db Metrics - Postgres Exporter
   postgres-exporter:
     image: quay.io/prometheuscommunity/postgres-exporter
+    command:
+      - "--no-collector.wal"
     environment:
       - DATA_SOURCE_URI=postgres:5432/postgres?sslmode=disable
       - DATA_SOURCE_USER=${POSTGRES_EXPORTER_USER}
